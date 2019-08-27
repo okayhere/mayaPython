@@ -1,0 +1,2 @@
+# mayaPython
+maya python snippets
