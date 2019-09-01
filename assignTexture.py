@@ -1,6 +1,45 @@
 import maya.cmds as cmds
 
 
+# UI
+win = cmds.window(title="Assign Shader", widthHeight=(300, 200))
+cmds.gridLayout(numberOfColumns=3, cellWidthHeight=(100, 25), columnsResizable=True)
+cmds.text(label="Source Object", width=100)
+cmds.button(label=">>", command=("sl = cmds.ls(selection=True); cmds.textField(name, edit=True, tx=sl[0])"), width=25)
+name = cmds.textField(width=100)
+cmds.button(label="Run", command=("runAssignTexture()"), width=150)
+cmds.button(label="Close", command=('cmds.deleteUI(\"'+win+'\", window=True)'), width=150)
+cmds.setParent('..')
+cmds.showWindow( window )
+
+def runAssignTexture():
+    input = cmds.textField(name, query=True, text=True)
+    polyobjects = cmds.ls(type="mesh") # shape
+
+    inputShape = str()
+    outputs = list()
+
+    if cmds.nodeType(input) == "transform":
+        try:
+            relatives = cmds.listRelatives(input, children=True, shapes=True, type="mesh", noIntermediate=True)
+            if len(relatives) != 1:
+                cmds.confirmDialog( title='Input Error', message="There is no unique shape node.", button=['Close'], defaultButton='Close', cancelButton='Close', dismissString='Close')
+            inputShape = relatives[0]
+        except TypeError:
+            cmds.confirmDialog( title='Input Error', message="There is no shape node.", button=['Close'], defaultButton='Close', cancelButton='Close', dismissString='Close')
+            
+    elif cmds.nodeType(input) == "mesh":
+        inputShape = input
+    else:
+        cmds.confirmDialog( title='Input Error', message="We don't support this node type.", button=['Close'], defaultButton='Close', cancelButton='Close', dismissString='Close')
+
+    if inputShape in polyobjects:
+        polyobjects.remove(inputShape)
+        outputs = polyobjects
+    
+    assignTexture(inputShape, outputs)
+
+
 def assignTexture(input, outputs):
     """ Get texture from input mesh and assign it to output mesh.
     
@@ -86,9 +125,3 @@ def _createFileNode(shader):
     cmds.connectAttr(fileNode + ".outColor", shader + ".color", force=True)
     
     return fileNode
-
-    
-# main
-input = "pSphereShape1"
-output = ["pSphereShape2", "pSphereShape3"]
-assignTexture(input, output)
